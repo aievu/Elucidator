@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\WriteNoteController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -16,7 +17,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('send-email');
     })->name('send-email');
 
-    Route::inertia('/write-note', 'write-note')->name('write-note');
+    Route::get('/write-note', [WriteNoteController::class, 'index'])->name('write-note.index');
+    Route::post('/write-note/store', [WriteNoteController::class, 'store'])->name('write-note.store');
+    Route::delete('/write-note/{id}', [WriteNoteController::class, 'destroy'])->name('write-note.destroy');
+    
     Route::inertia('/events', 'events')->name('events');
 });
 
