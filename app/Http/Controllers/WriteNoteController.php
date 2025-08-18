@@ -13,7 +13,7 @@ class WriteNoteController extends Controller
     {
         $user = Auth::user();
 
-        $notes = Note::where('user_id', $user->id)->get();
+        $notes = Note::where('user_id', $user->id)->orderByDesc('created_at')->get();
 
         return inertia('write-note', [
             'notes' => $notes,
@@ -45,5 +45,23 @@ class WriteNoteController extends Controller
         $note->delete();
 
         return redirect()->route('write-note.index')->with('success', 'Success to delete the note.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:50',
+            'note' => 'required|string|max:800'
+        ]);
+
+        $note = Note::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+
+        if (!$note) {
+            return redirect()->back()->with('error', 'Error to update the note.');
+        }
+
+        $note->update($data);
+
+        return redirect()->route('write-note.index')->with('success', 'Note updated.');
     }
 }

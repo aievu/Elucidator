@@ -1,18 +1,22 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { LoaderCircle } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import InputError from '@/components/input-error';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 import { PageProps } from '@inertiajs/core';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogTrigger, DialogTitle, DialogContent, DialogHeader, DialogDescription } from '@/components/ui/dialog';
 
 type WriteNoteForm = {
     title: string;
     note: string;
+    editTitle: string;
+    editNote: string;
 }
 
 type Note = {
@@ -38,6 +42,8 @@ export default function WriteNote({ notes }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm<Required<WriteNoteForm>>({
         title: '',
         note: '',
+        editTitle: '',
+        editNote: '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -46,6 +52,20 @@ export default function WriteNote({ notes }: Props) {
             onFinish: () => reset('title', 'note'),
         });
     };
+
+    const [noteEditing, setNoteEditing] = useState<Note | null>(null);
+
+    const submitEdit: FormEventHandler = (e) => {
+        e.preventDefault();
+        if (!noteEditing) return;
+
+        router.put(route('write-note.update', noteEditing.id), {
+            title: data.editTitle,
+            note: data.editNote,
+        }, {
+            onFinish: () => reset('editTitle', 'editNote'),
+        })
+    }
 
     const handleDelete = (id: number) => {
         if (confirm('Do you really want to delete this note?')) {
@@ -88,6 +108,7 @@ export default function WriteNote({ notes }: Props) {
                                     <InputError message={errors.note} />
                                 </div>
                             <Button type="submit" disabled={processing}>
+                                {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                                 Create note
                             </Button>
                         </form>
@@ -105,9 +126,57 @@ export default function WriteNote({ notes }: Props) {
                                             </div>
                                             <div className='mt-5 flex items-center justify-between'>
                                                 <small>{new Date(note.created_at).toLocaleDateString()}</small>
-                                                <Button type='submit' onClick={() => handleDelete(note.id)}>
-                                                    Delete
-                                                </Button>
+                                                <div className='flex gap-3'>
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button type="submit" onClick={() => {
+                                                                setNoteEditing(note);
+                                                                setData("editTitle", note.title);
+                                                                setData("editNote", note.note);
+                                                            }}>
+                                                                Edit
+                                                            </Button>
+                                                            </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>You are editing your note</DialogTitle>
+                                                                <DialogDescription>
+                                                                    <form method="POST" className='flex flex-col items-center gap-6' onSubmit={submitEdit}>
+                                                                        <div className='grid gap-2 w-md'>
+                                                                            <Label>Note title</Label>
+                                                                            <Input
+                                                                                id='editTitle'
+                                                                                type='text'
+                                                                                required
+                                                                                value={data.editTitle}
+                                                                                onChange={(e) => setData("editTitle", e.target.value)}
+                                                                                disabled={processing}
+                                                                            />
+                                                                            <InputError message={errors.title} />
+                                                                        </div>
+                                                                        <div className='grid gap-2 w-md'>
+                                                                            <Label>Note field</Label>
+                                                                            <Textarea
+                                                                                id='editNote'
+                                                                                required
+                                                                                value={data.editNote}
+                                                                                onChange={(e) => setData('editNote', e.target.value)}
+                                                                                disabled={processing}>
+                                                                                </Textarea>
+                                                                            <InputError message={errors.editNote} />
+                                                                        </div>
+                                                                    <Button className="w-xs" type="submit">
+                                                                        Save
+                                                                    </Button>
+                                                                </form>
+                                                                </DialogDescription>
+                                                            </DialogHeader>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                    <Button type='submit' onClick={() => handleDelete(note.id)}>
+                                                        Delete
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

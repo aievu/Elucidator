@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/write-note', [WriteNoteController::class, 'index'])->name('write-note.index');
     Route::post('/write-note/store', [WriteNoteController::class, 'store'])->name('write-note.store');
     Route::delete('/write-note/{id}', [WriteNoteController::class, 'destroy'])->name('write-note.destroy');
+    Route::put('/write-note/{id}', [WriteNoteController::class, 'update'])->name('write-note.update');
     
     Route::inertia('/events', 'events')->name('events');
 });
